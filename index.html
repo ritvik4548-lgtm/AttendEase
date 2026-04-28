@@ -1,159 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AttendEase - AI Attendance System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendEase – Student Attendance Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1a1a2e;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --surface: #16213e;
+    --card: #0f3460;
+    --text: #e0e0f0;
+    --muted: #8888aa;
+    --green: #00d68f;
+    --red: #ff4757;
+    --amber: #ffa502;
+    --border: rgba(255,255,255,0.08);
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--primary);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s;
+  }
+  .login-card {
+    background: var(--surface);
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  .login-card h2 { font-family: var(--font-head); margin-bottom: 1.5rem; }
+  .login-card .form-group { margin-bottom: 1rem; text-align: left; }
+  .login-card input { width: 100%; padding: 0.8rem; margin-top: 0.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--primary); color: white; }
+  .login-card button { width: 100%; padding: 0.8rem; margin-top: 1rem; border-radius: 8px; font-weight: bold; }
+
+  /* ── APP WRAPPER ── */
+  #app-wrapper { display: none; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; }
+  .logo span { color: var(--accent); }
+  .header-actions { display: flex; align-items: center; gap: 1rem; }
+  .header-date { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    padding: 0.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.45rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--border); color: var(--text); }
+
+  /* ── MAIN ── */
+  main { padding: 2rem; max-width: 960px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── STAT CARDS & OTHER UI ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; position: relative; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.blue::before { background: #4b7cf3; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .stat-value { font-family: var(--font-head); font-size: 2rem; font-weight: 800; }
+  .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+  .section-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+  .btn { font-family: var(--font-body); font-size: 0.85rem; padding: 0.5rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.8rem; }
+  .btn-green { background: var(--green); color: #001a0f; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-amber { background: var(--amber); color: #1a0a00; }
+  .form-row { display: flex; gap: 0.75rem; margin-bottom: 1.2rem; flex-wrap: wrap; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 0.8rem; color: var(--muted); }
+  .form-group input, .form-group select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.9rem; color: var(--text); }
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead th { background: var(--surface); padding: 0.75rem 1rem; text-align: left; color: var(--muted); font-weight: 500; }
+  tbody tr { border-top: 1px solid var(--border); }
+  tbody td { padding: 0.8rem 1rem; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; }
+  .badge-green { background: rgba(0,214,143,0.15); color: var(--green); }
+  .badge-red   { background: rgba(255,71,87,0.15);  color: var(--red);   }
+  .badge-amber { background: rgba(255,165,2,0.15);  color: var(--amber); }
+  .att-row { display: flex; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem 1.2rem; margin-bottom: 0.6rem; }
+  .att-name { font-weight: 500; font-size: 0.92rem; }
+  .att-roll { font-size: 0.78rem; color: var(--muted); }
+  .att-btns { display: flex; gap: 0.5rem; }
+  .att-selected-p { border-color: var(--green); }
+  .att-selected-a { border-color: var(--red); }
+  .att-selected-l { border-color: var(--amber); }
+  .pct-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .pct-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; }
+  .pct-fill { height: 100%; border-radius: 3px; }
+  .pct-text { font-size: 0.82rem; min-width: 38px; text-align: right; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+  #toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--surface); border-left: 4px solid var(--green); border-radius: 10px; padding: 0.8rem 1.4rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; z-index: 999; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; }
+</style>
 </head>
 <body>
-    <div id="loader">
-        <div class="spinner"></div>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h2>Attend<span>Ease</span> Admin</h2>
+    <div class="form-group">
+      <label>Email ID</label>
+      <input type="email" id="login-email" placeholder="admin@attendease.com" value="admin@admin.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" value="password123">
+    </div>
+    <button class="btn btn-accent" onclick="handleLogin()">Login to Dashboard</button>
+  </div>
+</div>
+
+<div id="app-wrapper">
+  <header>
+    <div class="logo">Attend<span>Ease</span></div>
+    <div class="header-actions">
+      <div class="header-date" id="headerDate"></div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event, 'dashboard')">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab(event, 'students')">Students</button>
+    <button class="tab-btn" onclick="switchTab(event, 'mark')">Mark Attendance</button>
+    <button class="tab-btn" onclick="switchTab(event, 'report')">Reports</button>
+  </div>
+
+  <main>
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value" id="s-total">0</div>
+          <div class="stat-sub">Enrolled</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Classes Held</div>
+          <div class="stat-value" id="s-classes">0</div>
+          <div class="stat-sub">Sessions recorded</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Avg Attendance</div>
+          <div class="stat-value" id="s-avg">0%</div>
+          <div class="stat-sub">Class average</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Defaulters</div>
+          <div class="stat-value" id="s-def">0</div>
+          <div class="stat-sub">Below 75%</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Recent Sessions</div>
+      </div>
+      <div id="recent-sessions">
+        <div class="empty"><div class="empty-icon">📋</div>No sessions recorded yet. Mark attendance to get started.</div>
+      </div>
     </div>
 
-    <div id="scroll-progress"></div>
+    <div class="tab-panel" id="tab-students">
+      <div class="form-row">
+        <div class="form-group"><label>Student Name</label><input type="text" id="inp-name" placeholder="e.g. Rahul Sharma"></div>
+        <div class="form-group"><label>Roll Number</label><input type="text" id="inp-roll" placeholder="e.g. BCA/2024/001"></div>
+        <div class="form-group">
+          <label>Division</label>
+          <select id="inp-div">
+            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+          </select>
+        </div>
+        <button class="btn btn-accent" onclick="addStudent()">+ Add Student</button>
+      </div>
 
-    <nav id="navbar">
-        <div class="nav-container">
-            <a href="#" class="logo">Attend<span>Ease</span></a>
-            <ul class="nav-links">
-                <li><a href="#hero">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">Flow</a></li>
-                <li><a href="#demo-dashboard">Dashboard</a></li>
-                <li><a href="#about">About</a></li>
-            </ul>
-            <a href="#contact" class="btn-primary nav-cta">Get in Touch</a>
-        </div>
-    </nav>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Roll No.</th><th>Division</th><th>Attendance %</th><th>Status</th><th></th></tr></thead>
+          <tbody id="student-tbody">
+            <tr><td colspan="7"><div class="empty"><div class="empty-icon">👤</div>No students added yet.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-    <header id="hero">
-        <div class="hero-content">
-            <h1 class="animate-heading">Smart AI Attendance System</h1>
-            <p class="hero-desc">Revolutionizing classroom management with high-precision facial recognition technology. Fast, secure, and automated.</p>
-            <div class="hero-btns">
-                <a href="#demo-dashboard" class="btn-primary"><i class="fa-solid fa-play"></i> View Demo</a>
-                <a href="#features" class="btn-secondary">Explore Features</a>
-            </div>
+    <div class="tab-panel" id="tab-mark">
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" id="att-date"></div>
+        <div class="form-group">
+          <label>Subject</label>
+          <div style="display:flex; gap: 5px;">
+            <select id="att-subject" style="flex: 1;"></select>
+            <button class="btn btn-outline" style="padding: 0 12px;" onclick="addNewSubject()" title="Add a new subject">+</button>
+          </div>
         </div>
-        <div class="hero-bg-anim">
-            <div class="glow glow-1"></div>
-            <div class="glow glow-2"></div>
+        <div class="form-group">
+          <label>Filter Division</label>
+          <select id="att-div-filter" onchange="renderMarkList()">
+            <option value="ALL">All Divisions</option><option value="A">Division A</option><option value="B">Division B</option><option value="C">Division C</option>
+          </select>
         </div>
-    </header>
+        <button class="btn btn-outline" onclick="markAll('P')">All Present</button>
+        <button class="btn btn-accent" onclick="saveAttendance()">Save Session ✓</button>
+      </div>
+      <div id="mark-list">
+        <div class="empty"><div class="empty-icon">✏️</div>Add students first to mark attendance.</div>
+      </div>
+    </div>
 
-    <section id="stats" class="container reveal">
-        <div class="stat-box glass-card">
-            <i class="fa-solid fa-bullseye"></i>
-            <h3><span class="counter" data-target="98">0</span>%</h3>
-            <p>Accuracy Rate</p>
+    <div class="tab-panel" id="tab-report">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Filter by Subject</label>
+          <select id="rep-subject" onchange="renderReport()">
+            <option value="ALL">All Subjects</option>
+          </select>
         </div>
-        <div class="stat-box glass-card">
-            <i class="fa-solid fa-bolt"></i>
-            <h3><span class="counter" data-target="2">0</span>s</h3>
-            <p>Fast Processing</p>
+        <div class="form-group">
+          <label>Filter by Division</label>
+          <select id="rep-div" onchange="renderReport()"><option value="ALL">All Divisions</option><option value="A">Division A</option><option value="B">Division B</option><option value="C">Division C</option></select>
         </div>
-        <div class="stat-box glass-card">
-            <i class="fa-solid fa-clock"></i>
-            <h3>Real-time</h3>
-            <p>Detection</p>
+        <div class="form-group">
+          <label>Sort by</label>
+          <select id="rep-sort" onchange="renderReport()"><option value="name">Name</option><option value="pct-asc">Attendance (Low first)</option><option value="pct-desc">Attendance (High first)</option></select>
         </div>
-    </section>
+        <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Roll No.</th><th>Name</th><th>Div</th><th>Present</th><th>Absent</th><th>Leave</th><th>Total</th><th>Attendance %</th></tr></thead>
+          <tbody id="report-tbody">
+            <tr><td colspan="8"><div class="empty"><div class="empty-icon">📊</div>No data available.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
 
-    <section id="features" class="container reveal">
-        <h2 class="section-title">Core <span>Features</span></h2>
-        <div class="features-grid">
-            <div class="feature-card glass-card">
-                <div class="icon-wrapper"><i class="fa-solid fa-user-check"></i></div>
-                <h3>Face Recognition</h3>
-                <p>Advanced Deep Learning algorithms to recognize students instantly, even with variations in lighting.</p>
-            </div>
-            <div class="feature-card glass-card">
-                <div class="icon-wrapper"><i class="fa-solid fa-rotate"></i></div>
-                <h3>Real-time Attendance</h3>
-                <p>Live syncing with the database ensures attendance is logged the millisecond a face is matched.</p>
-            </div>
-            <div class="feature-card glass-card">
-                <div class="icon-wrapper"><i class="fa-solid fa-user-clock"></i></div>
-                <h3>Late Entry Detection</h3>
-                <p>Automatically flags students who enter the premises after the designated grace period.</p>
-            </div>
-            <div class="feature-card glass-card">
-                <div class="icon-wrapper"><i class="fa-solid fa-shield-halved"></i></div>
-                <h3>Secure Data Storage</h3>
-                <p>Encrypted biometric mappings and cloud-based architecture ensure complete data privacy.</p>
-            </div>
-        </div>
-    </section>
+<div id="toast"></div>
 
-    <section id="how-it-works" class="container reveal">
-        <h2 class="section-title">How It <span>Works</span></h2>
-        <div class="flow-container">
-            <div class="flow-step">
-                <div class="step-icon glass-card"><i class="fa-solid fa-camera"></i></div>
-                <h4>1. Face Capture</h4>
-            </div>
-            <i class="fa-solid fa-arrow-right flow-arrow"></i>
-            <div class="flow-step">
-                <div class="step-icon glass-card"><i class="fa-solid fa-microchip"></i></div>
-                <h4>2. Model Processing</h4>
-            </div>
-            <i class="fa-solid fa-arrow-right flow-arrow"></i>
-            <div class="flow-step">
-                <div class="step-icon glass-card"><i class="fa-solid fa-id-badge"></i></div>
-                <h4>3. Recognition</h4>
-            </div>
-            <i class="fa-solid fa-arrow-right flow-arrow"></i>
-            <div class="flow-step">
-                <div class="step-icon glass-card"><i class="fa-solid fa-check-double"></i></div>
-                <h4>4. Marked</h4>
-            </div>
-        </div>
-    </section>
+<script>
+// ── AUTHENTICATION MOCK ──
+function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  
+  if(email === 'admin@admin.com' && pass === 'password123') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+    toast('Welcome, Admin!', 'green');
+    renderAll(); 
+  } else {
+    alert('Invalid Credentials. Try admin@admin.com / password123');
+  }
+}
 
-    <section id="demo-dashboard" class="container reveal">
-        <h2 class="section-title">System <span>Preview</span></h2>
-        <div class="preview-grid">
-            <div class="preview-card glass-card">
-                <div class="img-placeholder">Camera Feed UI</div>
-                <h4>Camera Interface</h4>
-            </div>
-            <div class="preview-card glass-card">
-                <div class="img-placeholder">Analytics Dashboard</div>
-                <h4>Main Dashboard</h4>
-            </div>
-            <div class="preview-card glass-card">
-                <div class="img-placeholder">Data Logs</div>
-                <h4>Attendance Logs</h4>
-            </div>
-        </div>
-    </section>
+function logout() {
+  document.getElementById('app-wrapper').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+}
 
-    <section id="video" class="container reveal">
-        <h2 class="section-title">Watch <span>Demo</span></h2>
-        <div class="video-container glass-card">
-            <iframe width="100%" height="315"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="AttendEase Demo Video"
-                style="border: none;"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
-        </div>
-    </section>
+// ── STATE ──
+let students = JSON.parse(localStorage.getItem('ae_students') || '[]');
+let sessions  = JSON.parse(localStorage.getItem('ae_sessions')  || '[]');
+let subjectsList = JSON.parse(localStorage.getItem('ae_subjects') || '["Data Structures", "Web Development", "Computer Networks"]');
+let tempMark  = {};
 
-    <section id="tech-stack" class="container reveal">
-        <h2 class="section-title">Tech <span>Stack</span></h2>
-        <div class="badges-container">
-            <span class="tech-badge glass-card"><i class="fa-brands fa-html5"></i> HTML/CSS/JS</span>
-            <span class="tech-badge glass-card"><i class="fa-brands fa-python"></i> Python (Flask)</span>
-            <span class="tech-badge glass-card"><i class="fa-solid fa-eye"></i> OpenCV</span>
-            <span class="tech-badge glass-card"><i class="fa-solid fa-database"></i> MySQL</span>
-        </div>
-    </section>
+// ── INIT ──
+document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-    <script src="script.js"></script>
+function save() {
+  localStorage.setItem('ae_students', JSON.stringify(students));
+  localStorage.setItem('ae_sessions',  JSON.stringify(sessions));
+  localStorage.setItem('ae_subjects', JSON.stringify(subjectsList));
+}
+
+function renderAll() {
+  renderSubjects();
+  renderStudentTable(); 
+  renderMarkList(); 
+  renderReport(); 
+  renderDashboard();
+}
+
+// ── SUBJECTS MANAGER ──
+function renderSubjects() {
+  const attSubj = document.getElementById('att-subject');
+  const repSubj = document.getElementById('rep-subject');
+  const currentRepVal = repSubj.value;
+
+  attSubj.innerHTML = subjectsList.map(s => `<option value="${s}">${s}</option>`).join('');
+  repSubj.innerHTML = '<option value="ALL">All Subjects</option>' + subjectsList.map(s => `<option value="${s}">${s}</option>`).join('');
+  
+  if (subjectsList.includes(currentRepVal)) repSubj.value = currentRepVal;
+}
+
+function addNewSubject() {
+  const newSubj = prompt("Enter the new subject name:");
+  if (newSubj && newSubj.trim() !== "") {
+    if (!subjectsList.includes(newSubj.trim())) {
+      subjectsList.push(newSubj.trim());
+      save();
+      renderSubjects();
+      toast('Subject added successfully!', 'green');
+    } else {
+      toast('Subject already exists!', 'amber');
+    }
+  }
+}
+
+// ── TAB SWITCH ──
+function switchTab(event, id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'mark') renderMarkList();
+  if (id === 'report') renderReport();
+  if (id === 'dashboard') renderDashboard();
+}
+
+// ── ADD STUDENT ──
+function addStudent() {
+  const name = document.getElementById('inp-name').value.trim();
+  const roll = document.getElementById('inp-roll').value.trim();
+  const div  = document.getElementById('inp-div').value;
+  if (!name || !roll) return toast('Please enter name and roll number.', 'red');
+  if (students.find(s => s.roll === roll)) return toast('Roll number already exists!', 'red');
+  students.push({ name, roll, div });
+  document.getElementById('inp-name').value = ''; document.getElementById('inp-roll').value = '';
+  save(); renderAll(); toast('Student added: ' + name);
+}
+
+function deleteStudent(roll) {
+  if (!confirm('Delete this student?')) return;
+  students = students.filter(s => s.roll !== roll);
+  sessions.forEach(sess => delete sess.records[roll]);
+  save(); renderAll(); toast('Student removed.');
+}
+
+// ── STUDENT TABLE ──
+function renderStudentTable() {
+  const tbody = document.getElementById('student-tbody');
+  if (!students.length) return tbody.innerHTML = '<tr><td colspan="7"><div class="empty">No students added yet.</div></td></tr>';
+  tbody.innerHTML = students.map((s, i) => {
+    const pct = getAttPct(s.roll);
+    const status = pct === null ? 'N/A' : pct >= 75 ? 'Regular' : pct >= 50 ? 'At Risk' : 'Defaulter';
+    const bClass = pct === null ? 'badge-amber' : pct >= 75 ? 'badge-green' : 'badge-red';
+    return `<tr><td>${i+1}</td><td><strong>${s.name}</strong></td><td>${s.roll}</td><td><span class="badge badge-amber">Div ${s.div}</span></td><td>${pct === null ? '—' : pct.toFixed(1) + '%'}</td><td><span class="badge ${bClass}">${status}</span></td><td><button class="del-btn" onclick="deleteStudent('${s.roll}')">✕</button></td></tr>`;
+  }).join('');
+}
+
+// ── MARK ATTENDANCE ──
+function renderMarkList() {
+  const divFilter = document.getElementById('att-div-filter').value;
+  const list = document.getElementById('mark-list');
+  const visible = students.filter(s => divFilter === 'ALL' || s.div === divFilter);
+  if (!visible.length) return list.innerHTML = '<div class="empty">No students to show. Add students first.</div>';
+  list.innerHTML = visible.map(s => {
+    const cur = tempMark[s.roll] || '';
+    const rowClass = cur === 'P' ? 'att-selected-p' : cur === 'A' ? 'att-selected-a' : cur === 'L' ? 'att-selected-l' : '';
+    return `<div class="att-row ${rowClass}"><div><div class="att-name">${s.name}</div><div class="att-roll">${s.roll} · Div ${s.div}</div></div><div class="att-btns"><button class="btn btn-sm btn-green" onclick="setMark('${s.roll}','P')">P</button><button class="btn btn-sm btn-red" onclick="setMark('${s.roll}','A')">A</button><button class="btn btn-sm btn-amber" onclick="setMark('${s.roll}','L')">L</button></div></div>`;
+  }).join('');
+}
+
+function setMark(roll, status) { tempMark[roll] = status; renderMarkList(); }
+function markAll(status) {
+  const divFilter = document.getElementById('att-div-filter').value;
+  students.filter(s => divFilter === 'ALL' || s.div === divFilter).forEach(s => tempMark[s.roll] = status);
+  renderMarkList();
+}
+
+function saveAttendance() {
+  const date = document.getElementById('att-date').value;
+  const subject = document.getElementById('att-subject').value;
+  if (!date || !students.length || !Object.keys(tempMark).length) return toast('Check inputs and mark students.', 'red');
+  sessions = sessions.filter(s => !(s.date === date && s.subject === subject));
+  const records = {};
+  students.forEach(s => { records[s.roll] = tempMark[s.roll] || 'A'; });
+  sessions.push({ date, subject, records });
+  tempMark = {}; save(); renderAll(); toast('Attendance saved!');
+}
+
+// ── REPORT ──
+function getAttPct(roll, subjectFilter = 'ALL') {
+  const relevant = sessions.filter(sess => (roll in sess.records) && (subjectFilter === 'ALL' || sess.subject === subjectFilter));
+  if (!relevant.length) return null;
+  const present = relevant.filter(sess => sess.records[roll] === 'P').length;
+  return (present / relevant.length) * 100;
+}
+
+function renderReport() {
+  const div = document.getElementById('rep-div').value;
+  const sort = document.getElementById('rep-sort').value;
+  const subj = document.getElementById('rep-subject').value;
+
+  let list = students.filter(s => div === 'ALL' || s.div === div).map(s => {
+    const rel = sessions.filter(sess => (s.roll in sess.records) && (subj === 'ALL' || sess.subject === subj));
+    const p = rel.filter(sess => sess.records[s.roll] === 'P').length;
+    const a = rel.filter(sess => sess.records[s.roll] === 'A').length;
+    const l = rel.filter(sess => sess.records[s.roll] === 'L').length;
+    return { ...s, p, a, l, total: rel.length, pct: rel.length ? (p / rel.length) * 100 : null };
+  });
+
+  if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
+  else if (sort === 'pct-asc') list.sort((a,b) => (a.pct??-1) - (b.pct??-1));
+  else list.sort((a,b) => (b.pct??-1) - (a.pct??-1));
+
+  const tbody = document.getElementById('report-tbody');
+  if (!list.length) return tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No data available.</div></td></tr>';
+  
+  tbody.innerHTML = list.map(s => {
+    const pctStr = s.pct === null ? '—' : s.pct.toFixed(1) + '%';
+    const fillColor = s.pct === null ? '#555' : s.pct >= 75 ? 'var(--green)' : s.pct >= 50 ? 'var(--amber)' : 'var(--red)';
+    return `<tr><td>${s.roll}</td><td><strong>${s.name}</strong></td><td align="center"><span class="badge badge-amber">${s.div}</span></td><td align="center">${s.p}</td><td align="center">${s.a}</td><td align="center">${s.l}</td><td align="center">${s.total}</td><td><div class="pct-bar-wrap"><div class="pct-bar"><div class="pct-fill" style="width:${s.pct||0}%;background:${fillColor}"></div></div><span class="pct-text" style="color:${fillColor}">${pctStr}</span></div></td></tr>`;
+  }).join('');
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  document.getElementById('s-total').textContent = students.length;
+  document.getElementById('s-classes').textContent = sessions.length;
+  const pcts = students.map(s => getAttPct(s.roll)).filter(p => p !== null);
+  document.getElementById('s-avg').textContent = pcts.length ? (pcts.reduce((a,b)=>a+b,0)/pcts.length).toFixed(1) + '%' : '0%';
+  document.getElementById('s-def').textContent = pcts.filter(p => p < 75).length;
+  const recentEl = document.getElementById('recent-sessions');
+  if (!sessions.length) return recentEl.innerHTML = '<div class="empty">No sessions recorded yet.</div>';
+  recentEl.innerHTML = [...sessions].reverse().slice(0, 5).map(sess => {
+    const total = Object.keys(sess.records).length;
+    const present = Object.values(sess.records).filter(v => v === 'P').length;
+    const pct = total ? Math.round(present / total * 100) : 0;
+    const color = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="att-row"><div><div class="att-name">${sess.subject}</div><div class="att-roll">${sess.date}</div></div><div style="display:flex;align-items:center;gap:1rem"><span style="font-size:0.85rem;color:var(--muted)">${present}/${total} present</span><span style="font-size:1rem;font-weight:600;color:${color}">${pct}%</span></div></div>`;
+  }).join('');
+}
+
+// ── EXPORT CSV & TOAST ──
+function exportCSV() { alert('CSV Export clicked!'); }
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.borderLeftColor = type === 'red' ? 'var(--red)' : 'var(--green)';
+  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
 </body>
 </html>
